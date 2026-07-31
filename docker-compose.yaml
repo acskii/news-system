@@ -1,0 +1,37 @@
+services:
+  postgres:
+    container_name: news_database
+
+    image: postgres:18-alpine
+
+    ports:
+      - '5432:5432'
+
+    secrets:
+      - db_user
+      - db_pwd
+
+    networks:
+      - news_net
+
+    environment:
+      POSTGRES_DB: news
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_pwd
+
+    # Special VOLUME directory for PostgreSQL
+    # as of version 18+, check this pull: https://github.com/docker-library/postgres/pull/1259    volumes:
+    volumes:
+      - news_data:/var/lib/postgresql
+
+volumes:
+  news_data:
+
+networks:
+  news_net:
+
+secrets:
+  db_user:
+    file: secrets/postgres_user.txt
+  db_pwd:
+    file: secrets/postgres_pwd.txt

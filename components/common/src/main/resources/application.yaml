@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: collector
+
+  flyway:
+    enabled: true
+    repair-on-migrate: true
+    validate-on-migrate: true
+    baseline-version: 1
+    user: ${DB_USER}
+    password: ${DB_PASS}
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/news
+    username: ${DB_USER}
+    password: ${DB_PASS}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+sources:
+  news_api:
+    base_url: ${NEWS_API_BASE_URL}
+    key: ${NEWS_API_KEY}
