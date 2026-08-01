@@ -4,7 +4,9 @@ import com.acskii.client.Client;
 import com.acskii.client.misc.news_api.Category;
 import com.acskii.client.responses.news_api.NewsApiResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class NewsApiClient extends Client<NewsApiResponse> {
     private final String apiKey;
 

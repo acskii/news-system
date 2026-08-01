@@ -1,4 +1,4 @@
-package models;
+package com.acskii.common.models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
