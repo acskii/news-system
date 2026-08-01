@@ -3,6 +3,7 @@ package com.acskii.client.clients;
 import com.acskii.client.Client;
 import com.acskii.client.misc.news_api.Category;
 import com.acskii.client.responses.news_api.NewsApiResponse;
+import com.acskii.client.responses.news_api.NewsApiSourceResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -52,6 +53,16 @@ public class NewsApiClient extends Client<NewsApiResponse> {
                 })
                 .retrieve()
                 .body(NewsApiResponse.class);
+    }
+
+    public NewsApiSourceResponse source() {
+        return this.client.get().uri((builder) -> {
+                    builder.path("/top-headlines/sources")
+                            .queryParam("apiKey", this.apiKey);
+                    return builder.build();
+                })
+                .retrieve()
+                .body(NewsApiSourceResponse.class);
     }
 
     /* Getters & Setters */

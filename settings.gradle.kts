@@ -5,3 +5,4 @@ rootProject.name = "news-system"
 include("applications:collector")
 include("components:api-client")
 include("components:common")
+include("applications:web")

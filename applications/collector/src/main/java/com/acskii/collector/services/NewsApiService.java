@@ -36,6 +36,7 @@ public class NewsApiService {
         List<Category> categories = List.of(Category.values());
         int count = 0;
 
+        this.client.setPageSize(100);
         long startTime = System.nanoTime();
         for (String country : countries) {
             for (Category category : categories) {
@@ -59,14 +60,16 @@ public class NewsApiService {
                         );
                         count++;
                     }
-
+                    log.info("[News API] (fetch) (headlines) [{}][{}] Page {} retrieved",
+                            country, category, this.client.getPage());
                 } else {
-                    log.warn("[News API] (fetch) (headlines) [{}][{}] Status: {}", country, category, response.status());
+                    log.warn("[News API] (fetch) (headlines) [{}][{}][{}] Status: {}",
+                            country, category, this.client.getPage(), response.status());
                 }
             }
         }
         long endTime = System.nanoTime();
-        log.info("[RESULT OF RUN] [{}]: Time for execution: {} s, Articles saved: {}",
+        log.info("[RESULT OF RUN] [News API] [{}]: Time for execution: {} s, Articles saved: {}",
                 LocalDate.now(),
                 (endTime - startTime) / 1000000000,
                 count);
