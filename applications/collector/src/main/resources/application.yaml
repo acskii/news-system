@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: collector
+
+  profiles:
+    active: dev

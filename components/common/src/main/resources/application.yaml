@@ -1,7 +1,4 @@
 spring:
-  application:
-    name: collector
-
   flyway:
     enabled: true
     repair-on-migrate: true

@@ -19,12 +19,4 @@ public class CollectorApplication {
     static void main(String[] args) {
         SpringApplication.run(CollectorApplication.class, args);
     }
-
-    @Bean
-    public CommandLineRunner runOnStartup(NewsApiService newsService) {
-        return args -> {
-            newsService.fetchTopHeadlines(List.of(new String[] {"us", "eg"}));
-            System.exit(0);
-        };
-    }
 }
