@@ -47,6 +47,12 @@ public class SourceService {
                 .orElseThrow(() -> new SourceNotFoundException(url));
     }
 
+    /* Update */
+    public void update(Source src) {
+        sourceRepository.save(src);
+        log.info("(update) source [{} : {}] was updated", src.getId(), src.getName());
+    }
+
     /* Delete */
     public void delete(Integer id) {
         Source src = get(id);

@@ -4,6 +4,8 @@ import com.acskii.client.clients.NewsApiClient;
 import com.acskii.client.misc.news_api.Category;
 import com.acskii.client.responses.news_api.ArticleDto;
 import com.acskii.client.responses.news_api.NewsApiResponse;
+import com.acskii.client.responses.news_api.NewsApiSourceResponse;
+import com.acskii.client.responses.news_api.SourceDto;
 import com.acskii.common.exceptions.SourceNotFoundException;
 import com.acskii.common.models.Source;
 import org.slf4j.Logger;
@@ -49,16 +51,18 @@ public class NewsApiService {
                         if (dto.url() == null || dto.title() == null) continue;
 
                         Source source = getSource(dto);
-                        articleService.create(
-                                dto.publishedAt(),
-                                source,
-                                dto.title(),
-                                dto.author(),
-                                dto.description(),
-                                dto.url(),
-                                dto.content()
-                        );
-                        count++;
+                        if (source != null) {
+                            articleService.create(
+                                    dto.publishedAt(),
+                                    source,
+                                    dto.title(),
+                                    dto.author(),
+                                    dto.description(),
+                                    dto.url(),
+                                    dto.content()
+                            );
+                            count++;
+                        }
                     }
                     log.info("[News API] (fetch) (headlines) [{}][{}] Page {} retrieved",
                             country, category, this.client.getPage());
@@ -75,13 +79,37 @@ public class NewsApiService {
                 count);
     }
 
+    public void populateSources() {
+        /* Get all sources from API */
+        NewsApiSourceResponse response = this.client.source();
+
+        if (response.status().equals("ok")) {
+            /* Ensure they are already populated */
+            for (SourceDto dto : response.sources()) {
+                try {
+                    Source src = sourceService.getByName(dto.name());
+                    if (!src.getDescription().equals(dto.description())) src.setDescription(dto.description());
+                    if (!src.getUrl().equals(dto.url())) src.setUrl(dto.url());
+                    if (!src.getDescription().equals(dto.description()) ||
+                            !src.getUrl().equals(dto.url())) {
+                        sourceService.update(src);
+                    }
+
+                } catch (SourceNotFoundException e) {
+                    sourceService.create(dto.name(), dto.url(), dto.description());
+                }
+            }
+        } else {
+            log.warn("[News API] (fetch) (sources) Status: {}", response.status());
+        }
+    }
+
     private Source getSource(ArticleDto dto) {
         try {
             return sourceService.getByName(dto.source().name());
         } catch (SourceNotFoundException e) {
-            return sourceService.create(dto.source().name(), "N/A", null);
+            return sourceService.create(dto.source().name(), "N/A", dto.source().description());
         }
-        // TODO: need to have endpoint for all sources from this api alone
     }
 
 }
