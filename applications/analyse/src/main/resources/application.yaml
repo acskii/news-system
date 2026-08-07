@@ -3,7 +3,4 @@ spring:
     import: classpath:config.yaml
 
   application:
-    name: collector
-
-  profiles:
-    active: dev
+    name: analyse

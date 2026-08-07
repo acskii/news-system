@@ -6,24 +6,8 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
 
-  flyway:
-    enabled: true
-    repair-on-migrate: true
-    validate-on-migrate: true
-    baseline-version: 1
-    user: ${DB_USER}
-    password: ${DB_PASS}
-
-  datasource:
-    url: jdbc:postgresql://localhost:5432/news
-    username: ${DB_USER}
-    password: ${DB_PASS}
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-
-
+  config:
+    import: classpath:config.yaml
 
 server:
   port: 8000
