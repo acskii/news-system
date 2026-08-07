@@ -9,6 +9,7 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/applications" />
+            <option value="$PROJECT_DIR$/applications/analyse" />
             <option value="$PROJECT_DIR$/applications/collector" />
             <option value="$PROJECT_DIR$/applications/web" />
             <option value="$PROJECT_DIR$/components" />
