@@ -170,7 +170,8 @@ for running the system.
 | `DB_USER`                | All applications            | Database username (must match the secret `postgres_user.txt`)   | `admin`                                 |
 | `DB_PASS`                | All applications            | Database password (must match the secret `postgres_pwd.txt`)    | `s3cret`                                |
 | `NEWS_API_KEY`           | Collector                   | API key for News API                                            | `a1b2c3d4e5f6...`                       |
-| `NEWS_API_BASE_URL`      | Collector                   | Base URL for News API endpoint                                  | `https://newsapi.org/v2`                       |
+| `NEWS_API_BASE_URL`      | Collector                   | Base URL for News API endpoint                                  | `https://newsapi.org/v2`                |
+| `ANALYSER_BASE_URL`      | Collector                   | Base URL for analyse application service                        | `http://localhost:8010`                 |
 | `SPRING_PROFILES_ACTIVE` | Collector (`dev` \| `prod`) | Set to `prod` to enable scheduling; otherwise defaults to `dev` | `dev`                                   |
 
 
