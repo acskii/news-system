@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}{{ article.title }} - NewsBoard{% endblock %}
+
+{% block nav_info %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <a href="/" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <div class="card">
+            <div class="card-body">
+                <h1 class="display-6 fw-bold mb-3">{{ article.title }}</h1>
+
+                <div class="d-flex flex-wrap align-items-center mb-4">
+                    <span class="badge bg-secondary me-2">
+                        <i class="bi bi-building"></i> {{ article.source.name }}
+                    </span>
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="bi bi-person"></i> {{ article.author }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-calendar"></i> {{ article.published_at.strftime('%d %B %Y at %H:%M') }}
+                    </span>
+                </div>
+
+                <div class="mb-4">
+                    <h5>Description</h5>
+                    <p class="lead">{{ article.description }}</p>
+                </div>
+
+                <div>
+                    <h5>Content</h5>
+                    <div style="white-space: pre-wrap; line-height: 1.8;">{{ article.content }}</div>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                        <i class="bi bi-box-arrow-up-right"></i> Read original article on {{ article.source.name }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
