@@ -1,0 +1,2 @@
+ALTER TABLE articles
+ADD COLUMN sentiment REAL DEFAULT 0.0;
