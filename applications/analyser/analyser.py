@@ -4,7 +4,6 @@ from services.sentiment import SentimentService
 from services.trend import TrendService
 from services.breaking_news import BreakingNewsService
 from database.query import DatabaseQuery
-from database.connection import db_session
 
 class AnalysisProcessor:
     def __init__(self):
