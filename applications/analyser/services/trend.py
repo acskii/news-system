@@ -1,5 +1,5 @@
 from collections import Counter
-import applications.analyser.nltk_data as nltk_data
+import nltk
 from nltk.corpus import stopwords
 
 class TrendService:
@@ -12,7 +12,7 @@ class TrendService:
         for article in articles:
             if not article.title:
                 continue
-            words = nltk_data.word_tokenize(article.title)
+            words = nltk.word_tokenize(article.title)
             # Filter non-alphanumeric tokens and stop words
             tokens.extend([w.lower() for w in words if w.isalnum() and w.lower() not in self.stop_words])
         return tokens

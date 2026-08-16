@@ -1,4 +1,3 @@
-import applications.analyser.nltk_data as nltk_data
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 class SentimentService:
