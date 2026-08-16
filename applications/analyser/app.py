@@ -1,7 +1,7 @@
 from log import get_logger
 from nltk_data import setup_nltk
 from flask import Flask, jsonify
-from database import db_session
+from database.connection import db_session
 from analyser import AnalysisProcessor
 
 logger = get_logger(__name__)
