@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, BigInteger, Text, Float, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from database import Base
+from database.connection import Base
 
 
 class Source(Base):
@@ -23,6 +23,7 @@ class Article(Base):
     title = Column(Text, nullable=False)
     author = Column(Text, nullable=False)
     src = Column(Integer, ForeignKey('sources.id', ondelete='CASCADE'), nullable=False)
+    sentiment = Column(Float, nullable=False)
     description = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
     url = Column(Text, nullable=False)

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - NewsBoard{% endblock %}
+
+{% block nav_info %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-light">Back to Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-graph-up"></i> Historical Analytics</h2>
+
+<!-- Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5>Total Articles per Day</h5>
+            <canvas id="articlesChart" height="200"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5>Overall Sentiment per Day</h5>
+            <canvas id="sentimentChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Table of all records -->
+<div class="card">
+    <div class="card-header">
+        <h5>Daily Analysis Records</h5>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Analysed At</th>
+                    <th>Total Articles</th>
+                    <th>Overall Sentiment</th>
+                    <th>Trending Topics</th>
+                    <th>Breaking News Clusters</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for analytic in analytics %}
+                <tr>
+                    <td>{{ analytic.analysed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ analytic.total_articles }}</td>
+                    <td>
+                        <span class="badge {% if analytic.overall_sentiment > 0.1 %}bg-success{% elif analytic.overall_sentiment < -0.1 %}bg-danger{% else %}bg-warning{% endif %}">
+                            {{ "%.2f"|format(analytic.overall_sentiment) }}
+                        </span>
+                    </td>
+                    <td>{{ analytic.trending_keywords|length if analytic.trending_keywords else 0 }}</td>
+                    <td>{{ analytic.breaking_news|length if analytic.breaking_news else 0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const dates = {{ dates|tojson }};
+    const articleCounts = {{ article_counts|tojson }};
+    const sentimentScores = {{ sentiment_scores|tojson }};
+
+    new Chart(document.getElementById('articlesChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Articles',
+                data: articleCounts,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13,110,253,0.1)',
+                fill: true
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    new Chart(document.getElementById('sentimentChart'), {
+        type: 'line',
+        data: {
+            labels: dates,
+            datasets: [{
+                label: 'Sentiment',
+                data: sentimentScores,
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220,53,69,0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { min: -1, max: 1 } }
+        }
+    });
+</script>
+{% endblock %}

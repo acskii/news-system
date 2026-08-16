@@ -8,7 +8,23 @@
 
 {% block content %}
 
-<!-- Analytics Cards Row -->
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    Check out today's latest articles at 
+    <a href="{{ url_for('today.main') }}">
+        <i class="bi bi-clock-history"></i> Today
+    </a>
+</div>
+
+<!-- Alerts -->
+{% if alerts %}
+    {% for category, message in alerts %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Analytics Cards -->
 <div class="row g-4 mb-4">
     <div class="col-md-3">
         <div class="card card-analytics text-center p-3">
@@ -22,13 +38,12 @@
             <h2 class="fw-bold {% if overall_sentiment > 0.1 %}text-success{% elif overall_sentiment < -0.1 %}text-danger{% else %}text-warning{% endif %}">
                 {{ "%.2f"|format(overall_sentiment) }}
             </h2>
-            <small class="text-muted">(compound score)</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card card-analytics text-center p-3">
             <h6 class="text-muted text-uppercase small">Trending Topics</h6>
-            <h2 class="fw-bold">{{ trending_topics|length }}</h2>
+            <h2 class="fw-bold">{{ trending_keywords|length }}</h2>
         </div>
     </div>
     <div class="col-md-3">
@@ -39,19 +54,23 @@
     </div>
 </div>
 
-<!-- Trending Chart -->
-{% if chart_labels and chart_scores %}
-<div class="row mb-4">
+<!-- Trending Keywords -->
+{% if trending_keywords %}
+<div class="row mb-3">
     <div class="col-12">
         <div class="card p-3">
-            <h5 class="card-title"><i class="bi bi-graph-up-arrow"></i> Trending Topics (Spike Score)</h5>
-            <canvas id="trendingChart" height="100"></canvas>
+            <h5><i class="bi bi-tags"></i> Trending Keywords</h5>
+            <div>
+                {% for kw in trending_keywords %}
+                    <span class="badge bg-primary me-2 mb-2 p-2">{{ kw }}</span>
+                {% endfor %}
+            </div>
         </div>
     </div>
 </div>
 {% endif %}
 
-<!-- Breaking News Alerts -->
+<!-- Breaking News -->
 {% if breaking_news %}
 <div class="row mb-4">
     <div class="col-12">
@@ -59,7 +78,7 @@
         <div class="row g-3">
             {% for item in breaking_news %}
             <div class="col-md-4">
-                <div class="card breaking-news-card h-100">
+                <div class="card h-100 border-danger">
                     <div class="card-body">
                         <h6 class="card-title">{{ item.sampleTitle|default('Breaking News') }}</h6>
                         <p class="card-text small text-muted">
@@ -67,6 +86,58 @@
                             <i class="bi bi-file-text"></i> {{ item.articleCount }} articles,
                             <i class="bi bi-building"></i> {{ item.uniqueSourcesCount }} sources
                         </p>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#breakingModal{{ loop.index0 }}">
+                            <i class="bi bi-eye"></i> View articles
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+                        <div class="modal fade" id="breakingModal{{ loop.index0 }}" tabindex="-1" aria-labelledby="breakingModalLabel{{ loop.index0 }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title" id="breakingModalLabel{{ loop.index0 }}">
+                                <i class="bi bi-exclamation-triangle-fill"></i> Breaking News: {{ item.sampleTitle|truncate(60) }}
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <span class="badge bg-secondary me-2">
+                                    <i class="bi bi-clock"></i> {{ item.timestamp }}
+                                </span>
+                                <span class="badge bg-secondary me-2">
+                                    <i class="bi bi-file-text"></i> {{ item.articleCount }} articles
+                                </span>
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-building"></i> {{ item.uniqueSourcesCount }} sources
+                                </span>
+                            </div>
+                            <hr>
+                            <h6>Articles in this cluster:</h6>
+                            <div class="list-group">
+                                {% for article in item.articles %}
+                                <a href="{{ url_for('article', article_id=article.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ article.title }}</h6>
+                                        <small class="text-muted">{{ article.published_at|default('N/A') }}</small>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-link-45deg"></i> 
+                                            <a href="{{ article.url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                                                View original
+                                            </a>
+                                        </small>
+                                    </div>
+                                </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -76,7 +147,7 @@
 </div>
 {% endif %}
 
-<!-- Filter Bar -->
+<!-- Filter Bar (unchanged) -->
 <div class="filter-bar">
     <form method="get" action="/" class="row g-3 align-items-end">
         <div class="col-md-3">
@@ -127,8 +198,11 @@
     {% for article in articles %}
     <div class="article-card card">
         <div class="card-body">
-            <div class="mb-2">
+            <!-- Source badge -->
+            <div class="mb-2 d-flex justify-content-between">
                 <span class="source-badge">{{ article.source.name }}</span>
+                <!-- Sentiment badge -->
+                <span class="badge bg-{{ article.sentiment_color }}">{{ article.sentiment_label }}</span>
             </div>
             <h5 class="card-title">
                 <a href="{{ url_for('article', article_id=article.id) }}" class="text-decoration-none text-dark stretched-link">
@@ -145,11 +219,7 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="empty-state">
-    <i class="bi bi-inbox"></i>
-    <h3 class="mt-3 text-muted">No articles found</h3>
-    <p class="text-muted">Try adjusting your filters or check back later.</p>
-</div>
+<div class="empty-state">...</div>
 {% endif %}
 
 <!-- Pagination -->

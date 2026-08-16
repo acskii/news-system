@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Today - NewsBoard{% endblock %}
+
+{% block extra_head %}
+<style>
+    .filter-bar {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .grid-2x2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+    @media (max-width: 768px) {
+        .grid-2x2 {
+            grid-template-columns: 1fr;
+        }
+    }
+    .article-card.read-card {
+        opacity: 0.75;
+        background-color: #f8f9fa;
+    }
+    .article-card.read-card:hover {
+        opacity: 1;
+    }
+    .scroll-controls {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 1050;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .scroll-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    .scroll-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Metric & Header Bar -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-clock-history me-2"></i>Articles for Today</h3>
+        <p class="text-muted mb-0">Showing articles gathered in the latest update</p>
+    </div>
+    <div>
+        <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">
+            <i class="bi bi-calendar me-1"></i> {{ collected_at }}
+        </span>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+    <form method="get" action="{{ url_for('today.main') }}" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label fw-semibold small text-uppercase text-muted">
+                <i class="bi bi-funnel me-1"></i> Filter by Available Source
+            </label>
+            <select name="source_id" class="form-select" onchange="this.form.submit()">
+                <option value="">All Scoped Sources ({{ unique_sources_count }})</option>
+                {% for src in unique_sources %}
+                    <option value="{{ src.id }}" {% if selected_source_id == src.id %}selected{% endif %}>
+                        {{ src.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label fw-semibold small text-uppercase text-muted">
+                <i class="bi bi-search me-1"></i> Search Articles
+            </label>
+            <input type="text" name="keyword" class="form-control" placeholder="Search title or content..." value="{{ keyword or '' }}">
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search me-1"></i> Search
+            </button>
+            <a href="{{ url_for('today.main') }}" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-x-circle me-1"></i> Clear
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Trending Words & Topics Accordion -->
+{% if trending_topics or trending_words %}
+<div class="accordion mb-4 shadow-sm" id="trendingAccordion">
+    <div class="accordion-item border-0 rounded-3">
+        <h2 class="accordion-header" id="headingTrending">
+            <button class="accordion-button collapsed fw-semibold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTrending" aria-expanded="false" aria-controls="collapseTrending">
+                <i class="bi bi-graph-up-arrow text-primary me-2"></i> Explore Trending Words & Keywords Today
+            </button>
+        </h2>
+        <div id="collapseTrending" class="accordion-collapse collapse" aria-labelledby="headingTrending" data-bs-parent="#trendingAccordion">
+            <div class="accordion-body bg-light rounded-bottom">
+                
+                {% if trending_topics %}
+                <div class="mb-3">
+                    <span class="small fw-bold text-uppercase text-muted d-block mb-2">
+                        <i class="bi bi-fire me-1"></i> Top Spike Topics Today:
+                    </span>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for topic in trending_topics %}
+                            {% set topic_kw = topic.keyword %}
+                            <a href="{{ url_for('today.main', source_id=selected_source_id, keyword=topic_kw) }}"
+                               class="badge text-decoration-none p-2 {% if keyword and keyword.lower() == topic_kw.lower() %}bg-primary text-white{% else %}bg-white text-dark border{% endif %} rounded-pill shadow-sm">
+                                #{{ topic_kw }}
+                                <span class="badge bg-secondary ms-1">{{ topic.todayCount }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if trending_words %}
+                <div class="{% if trending_topics %}pt-2 border-top{% endif %}">
+                    <span class="small fw-bold text-uppercase text-muted d-block mb-2">
+                        <i class="bi bi-hash me-1"></i> Scoped Keywords:
+                    </span>
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for word in trending_words %}
+                            <a href="{{ url_for('today.main', source_id=selected_source_id, keyword=word) }}" 
+                               class="btn btn-sm {% if keyword == word %}btn-primary{% else %}btn-outline-primary{% endif %} py-1 px-3 rounded-pill">
+                                {{ word }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- SECTION 1: UNREAD ARTICLES -->
+<div class="mb-5">
+    <h4 class="fw-bold mb-3 text-dark d-flex align-items-center">
+        <i class="bi bi-envelope-open text-primary me-2"></i> Unread Articles
+        <span class="badge bg-primary rounded-pill ms-2 fs-6">{{ unread_articles|length }}</span>
+    </h4>
+
+    {% if unread_articles %}
+        <div class="grid-2x2">
+            {% for article in unread_articles %}
+                <div class="article-card card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="source-badge">
+                                {{ article.source.name if article.source else 'Unknown' }}
+                            </span>
+                            {% if article.sentiment_label %}
+                            <span class="badge bg-{{ article.sentiment_color }}-subtle text-{{ article.sentiment_color }} border border-{{ article.sentiment_color }}">
+                                {{ article.sentiment_label }}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <h5 class="card-title">
+                            <a href="{{ url_for('article', article_id=article.id, **{'from': 'today'}) }}" 
+                               class="text-decoration-none text-dark stretched-link article-link" 
+                               data-article-id="{{ article.id }}">
+                                {{ article.title }}
+                            </a>
+                        </h5>
+
+                        <p class="card-text">{{ article.description or 'No summary available.' }}</p>
+
+                        <div class="article-meta">
+                            <span>
+                                <i class="bi bi-person me-1"></i>
+                                {{ article.author or 'Editorial' }}
+                            </span>
+                            <span>
+                                <i class="bi bi-clock me-1"></i>
+                                {{ article.published_at.strftime('%d %b %Y, %H:%M') if article.published_at else 'N/A' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="p-4 text-center bg-light rounded-3 border">
+            <i class="bi bi-check-circle-fill text-success fs-3 d-block mb-2"></i>
+            <span class="fw-semibold text-secondary">You're all caught up! No unread articles available.</span>
+        </div>
+    {% endif %}
+</div>
+
+<!-- SECTION 2: READ ARTICLES -->
+{% if read_articles %}
+<div class="mb-5 pt-3 border-top">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-0 text-muted d-flex align-items-center fs-5">
+            <i class="bi bi-check2-all me-2"></i> Already Read
+            <span class="badge bg-secondary rounded-pill ms-2 fs-6">{{ read_articles|length }}</span>
+        </h4>
+        <form method="post" action="{{ url_for('today.clear_history') }}">
+            <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash me-1"></i> Clear Read History
+            </button>
+        </form>
+    </div>
+
+    <div class="grid-2x2">
+        {% for article in read_articles %}
+            <div class="article-card card read-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="source-badge">
+                            {{ article.source.name if article.source else 'Unknown' }}
+                        </span>
+                        <span class="badge bg-light text-secondary border">Read</span>
+                    </div>
+
+                    <h5 class="card-title">
+                        <a href="{{ url_for('article', article_id=article.id) }}" 
+                           class="text-decoration-none text-muted stretched-link">
+                            {{ article.title }}
+                        </a>
+                    </h5>
+
+                    <p class="card-text text-muted">{{ article.description or 'No summary available.' }}</p>
+
+                    <div class="article-meta">
+                        <span>
+                            <i class="bi bi-person me-1"></i>
+                            {{ article.author or 'Editorial' }}
+                        </span>
+                        <span>
+                            <i class="bi bi-clock me-1"></i>
+                            {{ article.published_at.strftime('%d %b %Y, %H:%M') if article.published_at else 'N/A' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if not unread_articles and not read_articles %}
+    <div class="empty-state">
+        <i class="bi bi-inbox fs-1 text-muted"></i>
+        <h4 class="mt-3 text-muted">No Articles Found</h4>
+        <p class="text-muted">No articles match your selected source or keyword filter.</p>
+    </div>
+{% endif %}
+
+<!-- Floating Scroll Controls -->
+<div class="scroll-controls">
+    <button type="button" class="btn btn-primary scroll-btn" onclick="scrollToTop()" title="Scroll to Top">
+        <i class="bi bi-arrow-up fs-5"></i>
+    </button>
+    <button type="button" class="btn btn-primary scroll-btn" onclick="scrollToBottom()" title="Scroll to Bottom">
+        <i class="bi bi-arrow-down fs-5"></i>
+    </button>
+</div>
+
+<script>
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function scrollToBottom() {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    // Cookie handler for tracking clicked articles
+    document.addEventListener("DOMContentLoaded", function () {
+        const links = document.querySelectorAll(".article-link");
+
+        links.forEach(link => {
+            link.addEventListener("click", function () {
+                const articleId = this.getAttribute("data-article-id");
+                if (!articleId) return;
+
+                // Read existing cookie
+                let cookies = document.cookie.split('; ').reduce((acc, current) => {
+                    const [name, value] = current.split('=');
+                    acc[name] = value;
+                    return acc;
+                }, {});
+
+                let readIds = cookies['read_article_ids'] ? cookies['read_article_ids'].split(',') : [];
+
+                if (!readIds.includes(String(articleId))) {
+                    readIds.push(articleId);
+                    // Set cookie valid for 30 days across the domain
+                    document.cookie = `read_article_ids=${readIds.join(',')}; path=/; max-age=${30 * 24 * 60 * 60}`;
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

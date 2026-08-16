@@ -36,6 +36,16 @@
             <a class="navbar-brand fw-bold" href="/">
                 <i class="bi bi-newspaper"></i> NewsBoard
             </a>
+            <span class="navbar-text text-light me-3">
+                <a href="{{ url_for('today.main') }}" class="text-light text-decoration-none">
+                    <i class="bi bi-clock-history"></i> Today
+                </a>
+            </span>
+            <span class="navbar-text text-light me-3">
+                <a href="{{ url_for('analytics') }}" class="text-light text-decoration-none">
+                    <i class="bi bi-graph-up"></i> Analytics
+                </a>
+            </span>
             <span class="navbar-text text-light">
                 {% block nav_info %}{% endblock %}
             </span>

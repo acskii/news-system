@@ -1,9 +1,9 @@
-import json
 import logging
-from datetime import datetime, date, timedelta
-from flask import Flask, render_template, request, abort
+from routes.today import today_route
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, abort, url_for
 from sqlalchemy import select, func, or_
-from database import db_session
+from database.connection import db_session
 from models import Article, Source, DailyAnalytic
 
 # Configure logging
@@ -13,36 +13,44 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'  # change in production
 
+app.register_blueprint(today_route, url_prefix="/today")
+
 # Teardown: remove the session after each request
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
 
-# ---------- Helper functions ----------
-def parse_trending(json_data):
-    """Parse the trending_keywords JSONB column into a list of dicts."""
-    if not json_data:
-        return []
-    try:
-        data = json.loads(json_data)
-        return data.get('trending_topics', [])
-    except (json.JSONDecodeError, TypeError):
-        return []
-
-def parse_breaking(json_data):
-    """Parse the breaking_news JSONB column into a list of dicts."""
-    if not json_data:
-        return []
-    try:
-        data = json.loads(json_data)
-        return data.get('breaking_news', [])
-    except (json.JSONDecodeError, TypeError):
-        return []
+def sentiment_label(score):
+    """Convert compound score to label and color."""
+    if score is None:
+        return ("N/A", "secondary")
+    if score > 0.05:
+        return ("Positive", "success")
+    elif score < -0.05:
+        return ("Negative", "danger")
+    else:
+        return ("Neutral", "secondary")
 
 # ---------- Routes ----------
 @app.route('/')
 def dashboard():
-    # 1. Get query parameters for filtering
+    # Fetch latest analytic
+    latest_analytic = db_session.execute(
+        select(DailyAnalytic).order_by(DailyAnalytic.analysed_at.desc()).limit(1)
+    ).scalar_one_or_none()
+
+    trending_topics = []
+    breaking_news = []
+    overall_sentiment = 0.0
+    total_articles_today = 0
+
+    if latest_analytic:
+        trending_topics = latest_analytic.trending_keywords.get('trending_topics', [])
+        breaking_news = latest_analytic.breaking_news.get('breaking_news', [])
+        overall_sentiment = latest_analytic.overall_sentiment or 0.0
+        total_articles_today = latest_analytic.total_articles or 0
+
+    # Get query parameters for filtering
     source_id = request.args.get('source_id', type=int)
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
@@ -76,8 +84,8 @@ def dashboard():
     total_articles_today = 0
 
     if latest_analytic:
-        trending_topics = parse_trending(latest_analytic.trending_keywords)
-        breaking_news = parse_breaking(latest_analytic.breaking_news)
+        trending_topics = latest_analytic.trending_keywords.get('trending_topics', [])
+        breaking_news = latest_analytic.breaking_news.get('breaking_news', [])
         overall_sentiment = latest_analytic.overall_sentiment or 0.0
         total_articles_today = latest_analytic.total_articles or 0
 
@@ -115,28 +123,36 @@ def dashboard():
     # 4. Get all sources for the filter dropdown
     sources = db_session.execute(select(Source).order_by(Source.name)).scalars().all()
 
-    # 5. Prepare data for the chart (trending topics)
-    chart_labels = [t.get('keyword', '') for t in trending_topics[:10]]
-    chart_scores = [t.get('spikeScore', 0) for t in trending_topics[:10]]
+    # Prepare trending keywords (as simple list)
+    trending_keywords = [t.get('keyword') for t in trending_topics if t.get('keyword')]
+
+    # For each article, compute sentiment label
+    for article in articles:
+        article.sentiment_label, article.sentiment_color = sentiment_label(article.sentiment)
+
+    # Alerts
+    alerts = []
+    if overall_sentiment < -0.2:
+        alerts.append(('danger', f'⚠️ Overall sentiment is very negative ({overall_sentiment:.2f}).'))
+    if breaking_news:
+        alerts.append(('info', f'📢 {len(breaking_news)} breaking news clusters detected.'))
 
     # 6. Render template
     return render_template(
         'index.html',
         articles=articles,
         sources=sources,
-        trending_topics=trending_topics,
+        trending_keywords=trending_keywords,
         breaking_news=breaking_news,
         overall_sentiment=overall_sentiment,
         total_articles_today=total_articles_today,
-        chart_labels=chart_labels,
-        chart_scores=chart_scores,
+        alerts=alerts,
         # Pagination
         page=page,
         total_pages=total_pages,
         total_items=total_items,
         has_prev=page > 1,
         has_next=page < total_pages,
-        # Filter values for preserving in form
         selected_source_id=source_id,
         start_date=start_date,
         end_date=end_date,
@@ -147,9 +163,44 @@ def dashboard():
 def article(article_id):
     stmt = select(Article).where(Article.id == article_id)
     article = db_session.execute(stmt).scalar_one_or_none()
-    if not article:
-        abort(404)
-    return render_template('article.html', article=article)
+    if not article: abort(404)
+    article.sentiment_label, article.sentiment_color = sentiment_label(article.sentiment)
+
+    from_param = request.args.get('from')
+    
+    if from_param == 'today':
+        back_url = url_for('today.main')
+        back_label = "Back to Today"
+    else:
+        back_url = url_for('dashboard') # Adjust to your dashboard route name
+        back_label = "Back to Dashboard"
+
+    return render_template(
+        'article.html', 
+        article=article, 
+        back_label=back_label,
+        back_url=back_url
+    )
+
+@app.route('/analytics')
+def analytics():
+    # Get all DailyAnalytic records, ordered by analysed_at desc
+    stmt = select(DailyAnalytic).order_by(DailyAnalytic.analysed_at.desc())
+    analytics = db_session.execute(stmt).scalars().all()
+
+    # Prepare data for charts (chronological order for line charts)
+    chrono = list(reversed(analytics))  # oldest first
+    dates = [a.analysed_at.strftime('%Y-%m-%d') for a in chrono]
+    article_counts = [a.total_articles for a in chrono]
+    sentiment_scores = [a.overall_sentiment for a in chrono]
+
+    return render_template(
+        'analytics.html',
+        analytics=analytics,
+        dates=dates,
+        article_counts=article_counts,
+        sentiment_scores=sentiment_scores
+    )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
