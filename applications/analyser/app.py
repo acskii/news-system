@@ -1,10 +1,10 @@
-import logging
+from log import get_logger
+from nltk_data import setup_nltk
 from flask import Flask, jsonify
 from database import db_session
 from analyser import AnalysisProcessor
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 app = Flask(__name__)
 processor = AnalysisProcessor()
@@ -24,6 +24,9 @@ def run_daily_analysis():
         logger.exception("Error occurred during daily analysis processing")
         db_session.rollback()
         return jsonify({"status": "ERROR", "message": str(e)}), 500
+
+# Setup NLTK data files #
+setup_nltk()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8010, debug=False)

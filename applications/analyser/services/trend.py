@@ -1,17 +1,6 @@
 from collections import Counter
-import nltk
+import applications.analyser.nltk_data as nltk_data
 from nltk.corpus import stopwords
-
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords', quiet=True)
-
-try:
-    nltk.data.find('corpora/punkt_tab')
-except LookupError:
-    nltk.download('punkt_tab', quiet=True)
-
 
 class TrendService:
     def __init__(self, sentiment_service):
@@ -23,7 +12,7 @@ class TrendService:
         for article in articles:
             if not article.title:
                 continue
-            words = nltk.word_tokenize(article.title)
+            words = nltk_data.word_tokenize(article.title)
             # Filter non-alphanumeric tokens and stop words
             tokens.extend([w.lower() for w in words if w.isalnum() and w.lower() not in self.stop_words])
         return tokens
