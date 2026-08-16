@@ -23,6 +23,7 @@ class Article(Base):
     title = Column(Text, nullable=False)
     author = Column(Text, nullable=False)
     src = Column(Integer, ForeignKey('sources.id', ondelete='CASCADE'), nullable=False)
+    sentiment = Column(Float, nullable=False)
     description = Column(Text, nullable=False)
     content = Column(Text, nullable=False)
     url = Column(Text, nullable=False)
