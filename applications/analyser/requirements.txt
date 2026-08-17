@@ -7,10 +7,16 @@ itsdangerous==2.2.0
 Jinja2==3.1.6
 joblib==1.5.3
 MarkupSafe==3.0.3
+narwhals==2.24.0
 nltk==3.10.3
+numpy==2.5.2
 psycopg==3.3.4
+psycopg-binary==3.3.4
 regex==2026.7.19
+scikit-learn==1.9.0
+scipy==1.18.0
 SQLAlchemy==2.0.52
+threadpoolctl==3.6.0
 tqdm==4.70.0
 typing_extensions==4.16.0
 Werkzeug==3.1.8
