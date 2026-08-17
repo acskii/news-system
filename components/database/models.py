@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, BigInteger, Text, Float, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-from database.connection import Base
+from components.database.connection import Base
 
 
 class Source(Base):

@@ -3,8 +3,8 @@ from routes.today import today_route
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, abort, url_for
 from sqlalchemy import select, func, or_
-from database.connection import db_session
-from models import Article, Source, DailyAnalytic
+from components.database.connection import db_session
+from components.database.models import Article, Source, DailyAnalytic
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

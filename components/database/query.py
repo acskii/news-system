@@ -2,8 +2,8 @@
 
 from datetime import timedelta, datetime
 from sqlalchemy import select
-from database.connection import db_session
-from models import Article, DailyAnalytic
+from components.database.connection import db_session
+from components.database.models import Article, DailyAnalytic
 from log import get_logger
 
 logger = get_logger(__name__)

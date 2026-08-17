@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, make_response
-from database.query import DatabaseQuery
+from components.database.query import DatabaseQuery
 from datetime import datetime
 
 today_route = Blueprint('today', __name__)

@@ -1,9 +1,9 @@
 from datetime import datetime
-from models import DailyAnalytic
+from components.database.models import DailyAnalytic
 from services.sentiment import SentimentService
 from services.trend import TrendService
 from services.breaking_news import BreakingNewsService
-from database.query import DatabaseQuery
+from components.database.query import DatabaseQuery
 
 class AnalysisProcessor:
     def __init__(self):
