@@ -19,6 +19,9 @@ public class Analytic {
     @Column( name = "total_articles", nullable = false )
     private int totalArticles;
 
+    @Column( name = "overall_sentiment", nullable = false )
+    private float overallSentiment;
+
     // Stores JSONB as string
     @JdbcTypeCode(SqlTypes.JSON)
     @Column( name = "trending_keywords", nullable = false )
@@ -53,4 +56,6 @@ public class Analytic {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public String getBreakingNews() { return breakingNews; }
     public void setBreakingNews(String breakingNews) { this.breakingNews = breakingNews; }
+    public float getOverallSentiment() { return overallSentiment; }
+    public void setOverallSentiment(float overallSentiment) { this.overallSentiment = overallSentiment; }
 }

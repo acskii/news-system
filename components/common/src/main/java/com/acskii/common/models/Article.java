@@ -44,6 +44,9 @@ public class Article {
     @Column( name = "content", nullable = false )
     private String content;
 
+    @Column( name = "sentiment", nullable = false )
+    private float sentiment;
+
     /* Meta DateTimes */
     @CreatedDate
     @Column( name = "created_at", nullable = false )
@@ -80,4 +83,6 @@ public class Article {
     public void setSrc(Source src) { this.src = src; }
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
+    public float getSentiment() { return sentiment; }
+    public void setSentiment(float sentiment) { this.sentiment = sentiment; }
 }
