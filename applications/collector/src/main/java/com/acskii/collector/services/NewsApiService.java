@@ -108,7 +108,11 @@ public class NewsApiService {
         try {
             return sourceService.getByName(dto.source().name());
         } catch (SourceNotFoundException e) {
-            return sourceService.create(dto.source().name(), "N/A", dto.source().description());
+            if (dto.source().name() != null) {
+                return sourceService.create(dto.source().name(), "N/A", dto.source().description());
+            } else {
+                return null;
+            }
         }
     }
 
