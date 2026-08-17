@@ -16,36 +16,32 @@
 - [Run](#run)
 
 ### Project Architecture
+This project uses a **modular, multi-stack architecture** where each _application_ is isolated from the others 
+and only depends on specified dependencies and shared _components_.
 
-This project uses a **modular** approach where each _application_ is isolated from the others and only depends on 
-specified dependencies and _components_.
+Project architecture is set up with organisation in mind by separating common dependencies, 
+database access layers, and domain models not specific to a single _application_ into their 
+own shared modules as _components_.
 
-Project architecture is set up with organisation in mind by separating common dependencies not 
-specific to an _application_ into their own module as _components_. 
+Each _application_ relies on libraries and _components_ aligned with its runtime environment:
 
-Each _application_ only depends on libraries and _components_ it uses to reduce the possibility
-of circular dependencies.
+- **Spring Boot** (`applications/collector`) relies on Gradle for module isolation and compile-time dependency 
+enforcement, alongside Spring `@Configuration` boundaries for context loading.
 
-The project ensures compliance to circular dependency reduction during compilation and during runtime:
 
-- **Gradle** enforces compliance during compilation by not compiling the project if an _application_ 
-or _component_ uses a dependency not mentioned in its own `build.gradle.kts`.
-
-- **@Configuration** annotation within Spring context is used to identify `@Bean`s used within each _component_,
-therefore only the beans within a component are loaded into the application context on _application_ dependency injection.
+- **Flask** (`applications/analyser` and `applications/dashboard`) relies on shared component for ORM models, database session management, and queries.
 
 Here is an overview of the full project folder structure:
 ```text
 news-system
     /applications
-        /analyse
+        /analyser
         /collector
-        /web
-            /src
-            build.gradle.kts
-        
+        /dashboard
+
     /components
         /api-client
+        /database
         /common
             /src
             build.gradle.kts
@@ -57,31 +53,39 @@ news-system
 
 Here is an overview of each application and component role within the system:
 
-- **`applications/collector`** – A standalone Spring Boot service that fetches news articles from third‑party APIs, 
-persists sources and articles into the shared database. 
+#### Applications
+
+- `applications/collector` – A standalone Spring Boot service that fetches news articles from third‑party APIs and persists sources and articles into the shared database. 
+Upon completing collection, it issues an HTTP request to the `analyser` service to trigger data processing. 
 It supports two operational modes controlled by Spring profiles:
-    - `dev` – Runs once via a `CommandLineRunner` and exits (ideal for testing).
-    - `prod` – Uses `@Scheduled` to execute daily at 08:00 (configurable).
+
+  - `dev` – Runs once via a `CommandLineRunner` and exits.
+
+  - `prod` – Uses `@Scheduled` to execute daily at **08:00**.
 
 
-- **`applications/analyse`** – A separate Spring Boot service responsible for computing daily analytics. 
-It reads articles collected within a time window, extracts trending keywords, detects breaking news, and 
-stores the results as an `Analytic` entity in the database.
+- `applications/analyser` – A Python and Flask microservice responsible for computing daily analytics. 
+Triggered via HTTP, it evaluates articles within a time window, computes headline sentiment scores, 
+detects keyword spikes, and clusters breaking news topics across sources.
+Results are stored in the database.
 
 
-- **`applications/web`** – The user‑facing dashboard built with Spring Boot, Thymeleaf, and Bootstrap. 
-It displays articles with filtering (source, date, keyword), pagination and breaking‑news alerts. 
-The web app only reads from the database.
+- `applications/dashboard` – The user‑facing web application that displays articles.
+The app reads from the database.
+
+#### Components
+
+- `components/database` – A shared Python library containing database connection configurations, 
+ORM models, and database query abstractions. It is used across all Flask applications to provide a single source 
+for database models and read/write operations.
 
 
-- **`components/common`** – A shared library that contains all JPA entities (`Article`, `Source`, `Analytic`), 
-Spring Data repositories, common services, Flyway migration scripts,
-and the shared database configuration. Every application depends on this component to ensure 
-a single source of truth for the data schema and data access.
+- `components/common` – A shared Java library containing JPA entities, Spring Data repositories, Flyway database migration scripts,
+and database configurations. Used by collector to manage schema migrations and data persistence.
 
 
-- **`components/api-client`** – A library that encapsulates the HTTP client and domain objects 
-required to communicate with third party APIs.
+- `components/api-client` – A library that encapsulates HTTP client implementations required to 
+communicate with external and internal APIs.
 
 ### Setup Database
 
@@ -164,48 +168,80 @@ To obtain an API key:
 The table below discusses all the environment variables needed to set up the project environment
 for running the system.
 
-| Variable                 | Required by                 | Description                                                     | Example                                 |
-|--------------------------|-----------------------------|-----------------------------------------------------------------|-----------------------------------------|
-| `DB_URL`                 | All applications            | JDBC URL of the PostgreSQL database                             | `jdbc:postgresql://localhost:5432/news` |
-| `DB_USER`                | All applications            | Database username (must match the secret `postgres_user.txt`)   | `admin`                                 |
-| `DB_PASS`                | All applications            | Database password (must match the secret `postgres_pwd.txt`)    | `s3cret`                                |
-| `NEWS_API_KEY`           | Collector                   | API key for News API                                            | `a1b2c3d4e5f6...`                       |
-| `NEWS_API_BASE_URL`      | Collector                   | Base URL for News API endpoint                                  | `https://newsapi.org/v2`                |
-| `ANALYSER_BASE_URL`      | Collector                   | Base URL for analyse application service                        | `http://localhost:8010`                 |
-| `SPRING_PROFILES_ACTIVE` | Collector (`dev` \| `prod`) | Set to `prod` to enable scheduling; otherwise defaults to `dev` | `dev`                                   |
+| Variable                 | Required by                 | Description                                                     | Example |
+|--------------------------|-----------------------------|-----------------------------------------------------------------|--------|
+| `DB_HOST`                | All applications            | Host name of the PostgreSQL database [Default: as example]      | `localhost` |
+| `DB_PORT`                | All applications            | Port for the PostgreSQL database     [Default: as example]      | `5432` |
+| `DB_NAME`                | All applications            | Name of the PostgreSQL database      [Default: as example]      | `news` |
+| `DB_USER`                | All applications            | Database username (must match the secret `postgres_user.txt`)   | `admin` |
+| `DB_PASS`                | All applications            | Database password (must match the secret `postgres_pwd.txt`)    | `s3cret` |
+| `NEWS_API_KEY`           | Collector                   | API key for News API                                            | `a1b2c3d4e5f6...` |
+| `NEWS_API_BASE_URL`      | Collector                   | Base URL for News API endpoint                                  | `https://newsapi.org/v2` |
+| `ANALYSER_BASE_URL`      | Collector                   | Base URL for analyse application service                        | `http://localhost:8010` |
+| `SPRING_PROFILES_ACTIVE` | Collector (`dev` \| `prod`) | Set to `prod` to enable scheduling; otherwise defaults to `dev` | `dev`  |
 
+Use the provided `.env.example` to view all environment variables mentioned in the above table.
 
-Use `export` in the terminal to export all required environment variables before running.
+To ensure that the applications and components have access to these, create a `.env` file, copy and paste the 
+environment variables from `.env.example` then fill them with the necessary values.
 
+After that, you are able to [run](#run) the applications.
 
 ### Run
 
-- **Build the whole project** from the root directory:
-   ```bash
-       ./gradlew build  
-   ```
-    
+The process has been made easier using a **Makefile** provided with the project.
+
+All environment variables provided in `.env` will be automatically exported if the **Makefile** is
+used for application running.
+
+To know more about **Makefile**s, please check [this](https://makefiletutorial.com/#why-do-makefiles-exist).
+
+> [!NOTE]
+> Instructions on how to install Make in Windows systems will be added soon.
+
+- Make sure you are in the root directory of the project.
+
+- Setup all applications
+
+  - Build the collector application:
+       ```bash
+           make build/collector
+       ```
+
+  - Install requirements for analyser application:
+       ```bash
+           make install/analyser
+       ```
+
+  - Install requirements for dashboard application:
+       ```bash
+           make install/dashboard
+       ``` 
+
 - Follow the [Setup Database](#setup-database) section to launch the PostgreSQL container and ensure the credentials are correctly placed in the secrets folder.
 
 
 - Follow the [Setup Environment](#setup-environment) section to pass required environment variables correctly.
 
 
-- Run each application independently. The order does not matter, but you might want start the collector first to populate data.
+- Run each application independently. 
+
+> [!WARNING]
+> You must run the **analyser** _before_ the **collector**!
+
+  - Analyser
+    ```bash
+      make run/analyser
+    ```
 
   - Collector
     ```bash
-      ./gradlew :applications:collector:bootRun
-    ```
-          
-  - Analyser
-    ```bash
-      ./gradlew :applications:analyse:bootRun
+      make run/collector
     ```
 
-  - Web
+  - Dashboard
     ```bash
-      ./gradlew :applications:web:bootRun
+      make run/dashboard
     ```
   
-- The dashboard will be available at http://localhost:8000.
+- The dashboard will be available at http://localhost:5000.
