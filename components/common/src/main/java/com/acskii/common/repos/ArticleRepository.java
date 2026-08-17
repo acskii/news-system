@@ -8,16 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.List;
 
 @Repository
 public interface ArticleRepository extends JpaRepository<Article, Long> {
-    Page<Article> findAllByOrderByPublishedAtDesc(Pageable pageable);
-
-    Page<Article> findBySrcOrderByPublishedAtDesc(Source src, Pageable pageable);
-
-    Page<Article> findByPublishedAtBetweenOrderByPublishedAtDesc(
-            Instant start, Instant end, Pageable pageable);
-
-    Page<Article> findBySrcAndPublishedAtBetweenOrderByPublishedAtDesc(
-            Source src, Instant start, Instant end, Pageable pageable);
+    List<Article> findByPublishedAtBetween(Instant start, Instant end);
 }
