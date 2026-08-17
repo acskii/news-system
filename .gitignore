@@ -1,9 +1,14 @@
+.env
 HELP.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+secrets/
+
+### Python ###
+__pycache__
 
 ### STS ###
 .apt_generated
