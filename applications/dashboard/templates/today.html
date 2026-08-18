@@ -178,7 +178,7 @@
                         </div>
 
                         <h5 class="card-title">
-                            <a href="{{ url_for('article', article_id=article.id, **{'from': 'today'}) }}" 
+                            <a href="{{ url_for('article.article', id=article.id, **{'from': 'today'}) }}" 
                                class="text-decoration-none text-dark stretched-link article-link" 
                                data-article-id="{{ article.id }}">
                                 {{ article.title }}
@@ -236,7 +236,7 @@
                     </div>
 
                     <h5 class="card-title">
-                        <a href="{{ url_for('article', article_id=article.id) }}" 
+                        <a href="{{ url_for('article.article', id=article.id) }}" 
                            class="text-decoration-none text-muted stretched-link">
                             {{ article.title }}
                         </a>

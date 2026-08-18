@@ -1,19 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, make_response
 from components.database.query import DatabaseQuery
+from utils.sentiment import sentiment_label
 from datetime import datetime
 
 today_route = Blueprint('today', __name__)
-
-def sentiment_label(score):
-    """Convert compound score to label and color."""
-    if score is None:
-        return ("N/A", "secondary")
-    if score > 0.05:
-        return ("Positive", "success")
-    elif score < -0.05:
-        return ("Negative", "danger")
-    else:
-        return ("Neutral", "secondary")
 
 def get_read_article_ids():
     """Extract read article IDs set from cookie."""
