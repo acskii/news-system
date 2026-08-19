@@ -131,6 +131,12 @@ credentials. To do so, create a folder within the project root named `secrets`.
   ```
   If on Linux, you may need to use `sudo docker compose up -d`
 
+  You can also use this command from the **Makefile** instead:
+  
+  ```bash
+    make run/dashboard
+  ```
+
 Congratulations! You successfully launched your database container. You can always query it using:
 
 ```bash
